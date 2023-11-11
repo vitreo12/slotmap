@@ -374,7 +374,7 @@ impl<K: Key, V> SecondaryMap<K, V> {
     pub fn remove_index(&mut self, key: K) -> Option<V> {
         let kd = key.data();
         if let Some(slot) = self.slots.get_mut(kd.idx as usize) {
-            if self.num_elems > 1 {
+            if self.num_elems > 0 {
                 self.num_elems -= 1;
             }
             return replace(slot, Slot::new_vacant()).into_option();

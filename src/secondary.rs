@@ -370,6 +370,17 @@ impl<K: Key, V> SecondaryMap<K, V> {
         None
     }
 
+    /// Like `remove` but does not do version checking
+    pub fn remove_idx(&mut self, key: K) -> Option<V> {
+        let kd = key.data();
+        if let Some(slot) = self.slots.get_mut(kd.idx as usize) {
+            self.num_elems -= 1;
+            return replace(slot, Slot::new_vacant()).into_option();
+        }
+
+        None
+    }
+
     /// Retains only the elements specified by the predicate.
     ///
     /// In other words, remove all key-value pairs `(k, v)` such that
@@ -603,7 +614,7 @@ impl<K: Key, V> SecondaryMap<K, V> {
                     ptrs[i] = MaybeUninit::new(&mut *value);
                     slot_versions[i] = MaybeUninit::new(version.get());
                     *version = NonZeroU32::new(2).unwrap();
-                },
+                }
 
                 _ => break,
             }
@@ -618,7 +629,7 @@ impl<K: Key, V> SecondaryMap<K, V> {
                 match self.slots.get_mut(idx) {
                     Some(Occupied { version, .. }) => {
                         *version = NonZeroU32::new_unchecked(slot_versions[j].assume_init());
-                    },
+                    }
                     _ => unreachable_unchecked(),
                 }
             }
@@ -883,8 +894,11 @@ impl<K: Key, V: PartialEq> PartialEq for SecondaryMap<K, V> {
             return false;
         }
 
-        self.iter()
-            .all(|(key, value)| other.get(key).map_or(false, |other_value| *value == *other_value))
+        self.iter().all(|(key, value)| {
+            other
+                .get(key)
+                .map_or(false, |other_value| *value == *other_value)
+        })
     }
 }
 
@@ -1034,7 +1048,7 @@ impl<'a, K: Key, V> Entry<'a, K, V> {
             Entry::Occupied(mut entry) => {
                 f(entry.get_mut());
                 Entry::Occupied(entry)
-            },
+            }
             Entry::Vacant(entry) => Entry::Vacant(entry),
         }
     }
@@ -1278,7 +1292,7 @@ impl<'a, K: Key, V> VacantEntry<'a, K, V> {
         // Despite the slot being considered Vacant for this entry, it might be occupied
         // with an outdated element.
         match replace(slot, Slot::new_occupied(self.kd.version.get(), value)) {
-            Occupied { .. } => {},
+            Occupied { .. } => {}
             Vacant => self.map.num_elems += 1,
         }
         unsafe { slot.get_unchecked_mut() }

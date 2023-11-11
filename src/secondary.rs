@@ -377,6 +377,7 @@ impl<K: Key, V> SecondaryMap<K, V> {
             if self.num_elems > 0 {
                 self.num_elems -= 1;
             }
+            println!("num elems: {}", self.num_elems);
             return replace(slot, Slot::new_vacant()).into_option();
         }
 

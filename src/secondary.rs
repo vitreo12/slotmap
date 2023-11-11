@@ -326,6 +326,7 @@ impl<K: Key, V> SecondaryMap<K, V> {
             }
         } else {
             self.num_elems += 1;
+            println!("Add: num elemens {}", self.num_elems);
         }
 
         *slot = Slot::new_occupied(kd.version.get(), value);
